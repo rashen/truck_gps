@@ -82,8 +82,9 @@ void loop()
 
     uint16_t status_code;
     uint16_t len;
+    char url[] = BACKEND_URL;
 
-    if (!fona.HTTP_GET_start(BACKEND_URL, &status_code, &len))
+    if (!fona.HTTP_GET_start(url, &status_code, &len))
     {
         Serial.println(F("Get failed"));
     }
@@ -101,7 +102,7 @@ void loop()
 
     char data[] = "{\"lat\":12.106168, \"lng\": 12.106168}";
 
-    if (!fona.HTTP_POST_start(BACKEND_URL, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len))
+    if (!fona.HTTP_POST_start(url, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len))
     {
         Serial.println(F("Post failed"));
     }
