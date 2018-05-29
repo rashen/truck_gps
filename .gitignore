@@ -1,4 +1,4 @@
 FONAtest.ino
 .vscode
 ws.code-workspace
-arduino/api.key
+*.key
