@@ -1,7 +1,6 @@
-#include <Adafruit_FONA.h>
 #include <SoftwareSerial.h>
-#include <firebase.h>
-// #include "api.key" // Macro called API_KEY
+#include "Adafruit_FONA.h"
+#include "private_url.h" // stores BACKEND_URL
 
 #define FONA_RX (2)
 #define FONA_TX (3)
@@ -81,10 +80,42 @@ void loop()
         fona.getGSMLoc(&pos.lat, &pos.lng);
     }
 
-    if !(fona.HTTP_POST_start(url, F("application/json"), (uint8_t *) data, strlen(data), &statuscode, (uint16_t *)&length))
-    {
+    uint16_t status_code;
+    uint16_t len;
 
+    if (!fona.HTTP_GET_start(BACKEND_URL, &status_code, &len))
+    {
+        Serial.println(F("Get failed"));
     }
+    // Read response buffer
+    while (len > 0)
+    {
+        while (fona.available())
+        {
+            char c = fona.read();
+            Serial.write(c);
+            len--;
+        }
+    }
+    fona.HTTP_GET_end();
+
+    char data[] = "{\"lat\":12.106168, \"lng\": 12.106168}";
+
+    if (!fona.HTTP_POST_start(BACKEND_URL, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len))
+    {
+        Serial.println(F("Post failed"));
+    }
+    // Read response buffer
+    while (len > 0)
+    {
+        while (fona.available())
+        {
+            char c = fona.read();
+            Serial.write(c);
+            len--;
+        }
+    }
+    fona.HTTP_POST_end();
 
     Serial.print(F("Location is "));
     Serial.print(pos.lat, 12);

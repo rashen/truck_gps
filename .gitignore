@@ -1,4 +1,5 @@
-FONAtest.ino
 .vscode
+.firebaserc
+FONAtest.ino
+private_url.h
 ws.code-workspace
-*.key
