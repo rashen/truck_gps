@@ -2,4 +2,5 @@
 .firebaserc
 FONAtest.ino
 private_url.h
+private_api_key.h
 ws.code-workspace
