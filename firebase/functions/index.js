@@ -5,14 +5,14 @@ const functions = require('firebase-functions');
 // as the SIM module can't do PUT requests.
 exports.redirectData = functions.database.ref('input/{pushId}').onCreate((snapshot, context) => {
     const original = snapshot.val();
-    snapshot.ref.remove();
     console.log('Moving ', context.params.pushId, original);
     return snapshot.ref.parent.parent.child('Sigmatrucken').set((original), (error) => {
         if (error) {
             console.log('Data could not be written. I have no clue why.');
-        } else {
             snapshot.ref.remove();
+        } else {
             console.log('Original data removed successfully');
+            snapshot.ref.remove();
         }
     });
 });
