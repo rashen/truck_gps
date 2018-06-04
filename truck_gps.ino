@@ -13,6 +13,8 @@
 #define PREC_GSM  (1)
 #define PREC_GPS  (2)
 
+#define ITERATION_SLEEP_TIME_MS (30000)
+
 char reply_buffer[255];
 
 SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
@@ -62,7 +64,7 @@ static bool m_post_coordinates(void)
 
     static char lat_c[16] = {0};
     static char lng_c[16] = {0};
-    static char data[100] = {0};
+    static char data[160] = {0};
 
     uint16_t status_code;
     uint16_t len;
@@ -74,11 +76,7 @@ static bool m_post_coordinates(void)
 
     Serial.println(data);
 
-    if (!fona.HTTP_POST_start(url, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len))
-    {
-        Serial.println(F("Post failed"));
-        return false;
-    }
+    bool error_code = fona.HTTP_POST_start(url, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len);
 
     // Read response buffer
     while (len > 0)
@@ -91,7 +89,7 @@ static bool m_post_coordinates(void)
         }
     }
     fona.HTTP_POST_end();
-    return true;
+    return error_code;
 }
 
 void loop()
@@ -119,9 +117,13 @@ void loop()
 
     Serial.print(F("Location is "));
     Serial.print(gs_pos.lat, 12);
-    Serial.print(F(" , "));
+    Serial.print(F(", "));
     Serial.print(gs_pos.lng, 12);
-    Serial.print(F("\n"));
+    Serial.print(F(". Precision: "));
+    Serial.print(gs_pos.precision);
 
-    delay(30000);
+    Serial.print(F("\nSleeping for "));
+    Serial.print(ITERATION_SLEEP_TIME_MS);
+    Serial.print(F(" ms"));
+    delay(ITERATION_SLEEP_TIME_MS);
 }
