@@ -1,6 +1,13 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true
+    "input": {
+      ".read": false,
+      ".write": true,
+      ".validate": "newData.child('input').child('key').val() === data.child('api_key').val()"
+    },
+    "current_pos": {
+      ".read": true,
+      ".write": false
+    }
   }
 }

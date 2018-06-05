@@ -78,7 +78,7 @@ static bool m_post_coordinates(void)
     dtostrf(gs_pos.lat, 4, 10, lat_c);
     dtostrf(gs_pos.lng, 4, 10, lng_c);
 
-    snprintf(data, sizeof(data), "{\"key\": \"%s\", \"lat\": %s, \"lng\": %s, \"prc\": %d}", api_key, lat_c, lng_c, gs_pos.precision);
+    snprintf(data, sizeof(data), "{\"key\": \"%s\", \"pos\": { \"lat\": %s, \"lng\": %s, \"prc\": %d} }", api_key, lat_c, lng_c, gs_pos.precision);
 
     bool error_code = fona.HTTP_POST_start(url, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len);
 
