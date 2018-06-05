@@ -1,6 +1,6 @@
 #include <SoftwareSerial.h>
 #include "Adafruit_FONA.h"
-#include "secrets.h" /* stores BACKEND_URL and API_KEY */
+#include "secrets.h" // Stores BACKEND_URL and API_KEY
 
 #define FONA_RX (2)
 #define FONA_TX (3)
@@ -13,9 +13,8 @@
 #define PREC_GSM  (1)
 #define PREC_GPS  (2)
 
-#define ITERATION_SLEEP_TIME_MS (30000)
-
-char reply_buffer[255];
+#define ITERATION_SLEEP_TIME_MS (10000)
+#define DELAY_3_MS (3000)
 
 SoftwareSerial fonaSS = SoftwareSerial(FONA_TX, FONA_RX);
 SoftwareSerial *fonaSerial = &fonaSS;
@@ -36,10 +35,8 @@ static pos_t gs_pos;
 
 void setup()
 {
-    while (!Serial); // Wait for serial port to open
-    Serial.begin(BAUD_USB);
-
-    fonaSerial->begin(BAUD_FONA);
+    Serial.begin(BAUD_USB); // USB Serial
+    fonaSerial->begin(BAUD_FONA); // Fona-controlling Serila
     if (!fona.begin(*fonaSerial))
     {
         Serial.println(F("Couldn't find FONA"));
@@ -52,9 +49,17 @@ void setup()
     {
         Serial.println(F("Failed to turn on GPRS, retry in 3s"));
         fona.enableGPRS(false);
-        delay(3000);
+        delay(DELAY_3_MS);
     }
+
     fona.setHTTPSRedirect(true);
+
+    while (!fona.enableGPS(true))
+    {
+        Serial.println(F("Failed to turn on GPS, retry in 3s"));
+        fona.enableGPS(false);
+        delay(DELAY_3_MS);
+    }
 }
 
 static bool m_post_coordinates(void)
@@ -69,12 +74,11 @@ static bool m_post_coordinates(void)
     uint16_t status_code;
     uint16_t len;
 
+    // Converts float to string
     dtostrf(gs_pos.lat, 4, 10, lat_c);
     dtostrf(gs_pos.lng, 4, 10, lng_c);
 
     snprintf(data, sizeof(data), "{\"key\": \"%s\", \"lat\": %s, \"lng\": %s, \"prc\": %d}", api_key, lat_c, lng_c, gs_pos.precision);
-
-    Serial.println(data);
 
     bool error_code = fona.HTTP_POST_start(url, F("text/plain"), (uint8_t *) data, strlen(data), &status_code, &len);
 
@@ -121,9 +125,9 @@ void loop()
     Serial.print(gs_pos.lng, 12);
     Serial.print(F(". Precision: "));
     Serial.print(gs_pos.precision);
-
     Serial.print(F("\nSleeping for "));
     Serial.print(ITERATION_SLEEP_TIME_MS);
     Serial.print(F(" ms"));
+
     delay(ITERATION_SLEEP_TIME_MS);
 }
