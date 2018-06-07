@@ -35,31 +35,34 @@ static pos_t gs_pos;
 
 void setup()
 {
-    Serial.begin(BAUD_USB); // USB Serial
-    fonaSerial->begin(BAUD_FONA); // Fona-controlling Serila
-    if (!fona.begin(*fonaSerial))
-    {
-        Serial.println(F("Couldn't find FONA"));
-        while(1); // Hang if no FONA
-    }
+    Serial.begin(BAUD_USB);
 
-    // Enable GPRS
+    fonaSerial->begin(BAUD_FONA);
+    while (!fona.begin(*fonaSerial))
+    {
+        Serial.println(F("ERROR: No FONA board could be found, retry in 3s."));
+        delay(DELAY_3_MS);
+    }
+    Serial.println(F("SUCCESS: FONA serial connection established."));
+
     fona.setGPRSNetworkSettings(F("services.telenor.se"));
+    fona.setHTTPSRedirect(true);
+
     while (!fona.enableGPRS(true))
     {
-        Serial.println(F("Failed to turn on GPRS, retry in 3s"));
+        Serial.println(F("ERROR: Failed to turn on GPRS, retry in 3s."));
         fona.enableGPRS(false);
         delay(DELAY_3_MS);
     }
-
-    fona.setHTTPSRedirect(true);
+    Serial.println(F("SUCCESS: GPRS enabled."));
 
     while (!fona.enableGPS(true))
     {
-        Serial.println(F("Failed to turn on GPS, retry in 3s"));
+        Serial.println(F("ERROR: Failed to turn on GPS, retry in 3s."));
         fona.enableGPS(false);
         delay(DELAY_3_MS);
     }
+    Serial.println(F("SUCCESS: GPS enabled."));
 }
 
 static bool m_post_coordinates(void)
@@ -74,7 +77,7 @@ static bool m_post_coordinates(void)
     uint16_t status_code;
     uint16_t len;
 
-    // Converts float to string
+    // Convert float coordinate to string
     dtostrf(gs_pos.lat, 4, 10, lat_c);
     dtostrf(gs_pos.lng, 4, 10, lng_c);
 
@@ -93,41 +96,48 @@ static bool m_post_coordinates(void)
         }
     }
     fona.HTTP_POST_end();
+
     return error_code;
 }
 
 void loop()
 {
     int gps_status = fona.GPSstatus();
-    Serial.print(F("GPS status: "));
+    Serial.print(F("INFO: GPS status: "));
     Serial.print(gps_status);
 
     if (fona.getGPS(&gs_pos.lat, &gs_pos.lng, NULL, NULL, NULL))
     {
-        Serial.println("Fetched GPS location successfully");
+        Serial.println("SUCCESS: Fetched GPS location successfully.");
         gs_pos.precision = PREC_GPS;
     }
     else
     {
-        Serial.println(F("Failed to fetch GPS coordinates, fetching GSM location instead"));
+        Serial.println(F("ERROR: Failed to fetch GPS coordinates, using GSM location instead."));
         fona.getGSMLoc(&gs_pos.lat, &gs_pos.lng);
         gs_pos.precision = PREC_GSM;
     }
 
     if (!m_post_coordinates())
     {
-        Serial.println(F("Failed to post coordinates to backend"));
+        Serial.println(F("ERROR: Failed to post coordinates to backend."));
+    }
+    else
+    {
+        Serial.println(F("SUCCESS: Coordinated posted succesfully."));
     }
 
-    Serial.print(F("Location is "));
+    Serial.print(F("INFO: Location is "));
     Serial.print(gs_pos.lat, 12);
     Serial.print(F(", "));
     Serial.print(gs_pos.lng, 12);
     Serial.print(F(". Precision: "));
     Serial.print(gs_pos.precision);
-    Serial.print(F("\nSleeping for "));
-    Serial.print(ITERATION_SLEEP_TIME_MS);
-    Serial.print(F(" ms"));
+    Serial.print(F("."));
 
+    Serial.println(F(""));
+    Serial.print(F("INFO: Sleeping for "));
+    Serial.print(ITERATION_SLEEP_TIME_MS);
+    Serial.print(F(" ms."));
     delay(ITERATION_SLEEP_TIME_MS);
 }
