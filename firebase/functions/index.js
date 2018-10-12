@@ -9,12 +9,11 @@ exports.redirectData = functions.database.ref('input/{pushId}').onCreate((snapsh
     const position = snapshot.child('pos').val();
 
     return snapshot.ref.root.child('current_pos').set((position), (error) => {
+        snapshot.ref.remove();
         if (error) {
             console.log('Data could not be written. I have no clue why.');
-            snapshot.ref.remove();
         } else {
             console.log('Position updated successfully');
-            snapshot.ref.remove();
         }
     });
 });
